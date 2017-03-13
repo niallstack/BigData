@@ -4,8 +4,12 @@ library(date)
 library(lubridate)
 library(tidyverse)
 library(knitr)
+
 #Replace blank spaces with NA
-operations <- read.csv("C:/Users/t00174406/Desktop/operations.csv", na.strings=c("", "NA")) # if your file is tab delimited
+operations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/operations.csv", na.strings=c("", "NA"))
+#I used the following from https://www.kaggle.com/cswingle/d/usaf/world-war-ii/preliminary-look-at-the-data just so 
+#I could understand the data and what was missing
+
 #We'll read in the data, snake-case the column names, and process the mm/dd/yy dates.
 
 
@@ -64,13 +68,17 @@ knit_hooks$set(inline = function(x) {
   }
 })
 kable(explosives, format = "rst", digits = 0)
+#I stopped using the mentioned preliminary look at the data here
 
-#Callsign not null
-operations %>%
-  select(callsign) %>%
-  mutate(total = 1,
-         not_null = ifelse(!is.na(callsign), 1)) %>%
-  summarize(total = sum(total),
-            not_null = sum(not_null)) %>%
-  mutate(good_data = not_null / total * 100)
+#Callsign summary
+summary(operations$callsign)
+
+#Finding percentage of callsing that is null
+callsignsNull <- is.na(operations$callsign)
+callsignNotNull <- !is.na(operations$callsign)
+prop.table(table(callsignsNull, callsignNotNull))
+#prop.table(table(!is.na(operations$callsign),is.na(operations$callsign)))
+
+operations %>% select_(.dots=setdiff(names(.),drop.cols))
+
 
