@@ -79,6 +79,7 @@ callsignNotNull <- !is.na(operations$callsign)
 prop.table(table(callsignsNull, callsignNotNull))
 #prop.table(table(!is.na(operations$callsign),is.na(operations$callsign)))
 
-operations %>% select_(.dots=setdiff(names(.),drop.cols))
+#Callsigns is clearly poor so might as well remove it
+operations$callsign <- NULL
 
 
