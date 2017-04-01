@@ -245,12 +245,76 @@ operations$mission.type[operations$mission.type=="41"] <- "UNKNOWN OR OTHER"
 operations$mission.type[is.na(operations$mission.type)] <- "UNKNOWN OR OTHER"
 
 
-all_mission_types <- operations %>% 
-  select(mission.type) %>% 
-  group_by(mission.type) %>%
+#--------Looking at the takeoff base column
+#Look at all bases
+missing_base <- operations %>% 
+  select(takeoff.base) %>% 
+  group_by(takeoff.base) %>%
   summarize(n = n()) %>%
   arrange(desc(n))
-View(all_mission_types)
+View(missing_base)
+
+#Replace Missing Base
+operations$takeoff.base <- as.character(operations$takeoff.base)
+operations$takeoff.base[is.na(operations$takeoff.base)] <- "UNKNOWN"
+
+
+#--------Looking at the takeoff location column
+#Look at all takeoff locations
+missing_takoff_loc <- operations %>% 
+  select(takeoff.location) %>% 
+  group_by(takeoff.location) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(missing_takoff_loc)
+
+#Replace Missing location
+operations$takeoff.location <- as.character(operations$takeoff.location)
+operations$takeoff.location[is.na(operations$takeoff.location)] <- "UNKNOWN"
+
+#--------Looking at the targetID column
+#Look at all targetID's
+all_targetID <- operations %>% 
+  select(target.id) %>% 
+  group_by(target.id) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_targetID)
+#Replace Missing targetID
+operations$target.id <- as.character(operations$target.id)
+operations$target.id[is.na(operations$target.id)] <- "UNKNOWN"
+
+#--------Looking at the target city column
+#Look at all target cities
+all_target_city <- operations %>% 
+  select(target.city) %>% 
+  group_by(target.city) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_city)
+#Replace Missing target city
+operations$target.city <- as.character(operations$target.city)
+operations$target.city[is.na(operations$target.city)] <- "UNKNOWN"
+#Combine the previous missing entries which were labelled "Unidentified
+operations$target.city <- as.character(operations$target.city)
+operations$target.city[operations$target.city=="UNIDENTIFIED"] <- "UNKNOWN"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
