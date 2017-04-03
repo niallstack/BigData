@@ -1,0 +1,1 @@
+rm(all_mission_types, explosives, missing_base, missing_force, missing_series, missing_takeoff_lat, missing_takeoff_long, missing_takoff_loc, missing_target_country, missing_theater_Country, operations, force_not_null, force_null)

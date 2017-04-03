@@ -4,6 +4,9 @@ library(date)
 library(lubridate)
 library(tidyverse)
 library(knitr)
+library(data.table)
+
+#Remove all variable and data command - rm(list=ls())
 
 #Replace blank spaces with NA
 operations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/operations.csv", na.strings=c("", "NA"))
@@ -16,6 +19,9 @@ operations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/operations.c
 
 names(operations) <- gsub('[()]', '', gsub(' ', '_', str_to_lower(names(operations))))
 operations <- operations %>%mutate(mission.date = mdy(mission.date))
+
+#I used this command to look at the percentage of na's in all columns
+colMeans(is.na(operations))
 
 #Here's a couple quick summaries mostly to see how much missing data there is. It doesn't look good...
 
@@ -218,7 +224,7 @@ operations$mission.type[operations$mission.type==13] <- "LEAFLET DROPPING"
 #Replace ID 14
 operations$mission.type[operations$mission.type==14] <- "TRANSPORT (COMBAT)"
 
-#Skip 15 for now
+operations$mission.type[operations$mission.type==15] <- "UNKNOWN OR OTHER"
 
 #Replace ID 16
 operations$mission.type[operations$mission.type==16] <- "STAGING"
@@ -296,38 +302,150 @@ View(all_target_city)
 operations$target.city <- as.character(operations$target.city)
 operations$target.city[is.na(operations$target.city)] <- "UNKNOWN"
 #Combine the previous missing entries which were labelled "Unidentified
-operations$target.city <- as.character(operations$target.city)
 operations$target.city[operations$target.city=="UNIDENTIFIED"] <- "UNKNOWN"
 
+#When an area that wasnt a city was bombed, its target city was given coordinates instead
+#Because of this I decided to rename the column from target.city to target.city.or.area 
+colnames(operations)[14] <- "target.city.or.area"
+
+#--------Looking at the target longitude and latitude column
+#--all takeoff longitude and latitude
+missing_takeoff_long_lat <- operations %>% 
+  select(takeoff.latitude, takeoff.longitude) %>% 
+  group_by(takeoff.latitude, takeoff.longitude) %>% 
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(missing_takeoff_long_lat)
+
+#Replace Target Missing Longitute With 0
+operations$takeoff.longitude <- as.character(operations$takeoff.longitude)
+operations$takeoff.longitude[is.na(operations$takeoff.longitude)] <- 0
+
+#Replace Target Missing Latitude With 0
+operations$takeoff.latitude <- as.character(operations$takeoff.latitude)
+operations$takeoff.latitude[is.na(operations$takeoff.latitude)] <- 0
+
+#--------Looking at the target type column
+#Look at all target type
+all_target_type <- operations %>% 
+  select(target.type) %>% 
+  group_by(target.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_type)
+
+#Replace Missing target type
+operations$target.type <- as.character(operations$target.type)
+operations$target.type[is.na(operations$target.type)] <- "UNKNOWN"
+#Combine the previous missing entries which were labelled "Unidentified
+operations$target.type[operations$target.type=="UNIDENTIFIED TARGET"] <- "UNKNOWN"
 
 
+#--------Looking at the target industry column
+#Look at all target industry
+all_target_industry <- operations %>% 
+  select(target.industry) %>% 
+  group_by(target.industry) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_industry)
+
+#Replace Missing target type
+operations$target.industry <- as.character(operations$target.industry)
+operations$target.industry[is.na(operations$target.industry)] <- "UNKNOWN"
+#Combine the previous missing entries which were labelled "Unidentified
+operations$target.industry[operations$target.industry=="UNIDENTIFIED TARGETS"] <- "UNKNOWN"
+
+#--------Looking at the target priority column
+#The priority is represensted by number, the THOR data dictionary states that
+#-1 Primary Target
+#-2 Seconary Target
+#-3 Target of Opportunity
+#-4 Target of Last Resort
+#-9 Not Indicated
+#I decided to replace the NA's with 9's. I chose not to replace the numbers with their corresponding meaning as I
+# wanted to use the numbers to rank them
+
+#Look at all target priorities
+all_target_priority <- operations %>% 
+  select(target.priority) %>% 
+  group_by(target.priority) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_priority)
+
+#Replace Missing target priorities
+operations$target.priority <- as.character(operations$target.priority)
+operations$target.priority[is.na(operations$target.priority)] <- 9
+
+#Replace all the incorrect values
+operations$target.priority[operations$target.priority==0] <- 9
+operations$target.priority[operations$target.priority==5] <- 9
+operations$target.priority[operations$target.priority==6] <- 9
+operations$target.priority[operations$target.priority==7] <- 9
+operations$target.priority[operations$target.priority==8] <- 9
+operations$target.priority[operations$target.priority=="SAAF"] <- 9
+operations$target.priority[operations$target.priority=="RNAS"] <- 9
+operations$target.priority[operations$target.priority=="P"] <- 9
+operations$target.priority[operations$target.priority=="A"] <- 9
+operations$target.priority[operations$target.priority=="O"] <- 9
+
+#--------Looking at the altitude column
+all_altitude <- operations %>% 
+  select(altitude..hundreds.of.feet.) %>% 
+  group_by(altitude..hundreds.of.feet.) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_altitude)
+
+#This time, instead of choosing to replace the na's with unknown I decided to take the mean of the column and add 
+#add that where there a na's in the data
+
+#for (i in which(sapply(operations, is.numeric))) {
+#  for (j in which(is.na(operations[, i]))) {
+#    operations[j, i] <- mean(operations[operations[, "altitude..hundreds.of.feet."] == operations[j, "altitude..hundreds.of.feet."], i],  na.rm = TRUE)
+#  }
+#}
+#setDT(operations)
+
+#operations[, altitude..hundreds.of.feet. := impute.mean(altitude..hundreds.of.feet.), by = altitude..hundreds.of.feet.][,
+#altitude..hundreds.of.feet. := impute.mean(altitude..hundreds.of.feet.), by = altitude..hundreds.of.feet.]
+# come back to this
+
+#--------Looking at the airborne aircraft column
+all_aircraft_airborne <- operations %>% 
+  select(airborne.aircraft) %>% 
+  group_by(airborne.aircraft) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_aircraft_airborne)
 
 
+colMeans(is.na(operations))
 
 
+#--------Looking at other aircraft columns
+#airborne.aircraft, bombing.aircraft, aircraft.returned, aircraft.failed, aircraft.damaged and aircraft.lost all
+#have above 50% na's in them. Because of this it would not be the best decision to simply use the mean or median
+#to replace the missing data. Also being numerical it didn't make sense to put unknown in the missing values instead.
+#So I decided to remove the columns, this also meant removing attacking aircraft as it would be useless by its self.
 
+operations$airborne.aircraft <- NULL
+operations$bombing.aircraft <- NULL
+operations$aircraft.returned <- NULL
+operations$aircraft.failed <- NULL
+operations$aircraft.damaged <- NULL
+operations$aircraft.lost <- NULL
+operations$attacking.aircraft <- NULL
 
+#--------Looking at explosives columns
+#The data again here is filled with empty data, this is also because the categories only have entires if those types of
+#explosives were dropped, other wise its left null. I also knew from some domain knowledge that there were two important
+#one offs were the bombs dropped were not listed, the two atomic bombs which were dropped during the war. These two
+#bombings were far too important to leave out so I decided to merge the columns into a single column called bomb type
+#then I also wouldnt have to worry about the amount of bombs on board.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+operations["bomb.type"] <- NA
 
 
 
