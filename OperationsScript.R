@@ -6,6 +6,7 @@ library(tidyverse)
 library(knitr)
 library(data.table)
 
+
 #Remove all variable and data command - rm(list=ls())
 
 #Replace blank spaces with NA
@@ -66,6 +67,13 @@ operations %>%
   summarize(total = sum(total),
             not_null = sum(not_null)) %>%
   mutate(good_data = not_null / total * 100)
+
+all_target_long_lat <- operations %>% 
+  select(target.latitude, target.longitude) %>% 
+  group_by(target.latitude, target.longitude) %>% 
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_long_lat)
 
 #Replace Target Missing Longitute With 0
 operations$target.longitude <- as.character(operations$target.longitude)
@@ -488,6 +496,51 @@ all_source_id <- operations %>%
 View(all_source_id)
 
 operations$source.id[is.na(operations$source.id)] <- "UNKNOWN"
+
+
+#------------------------------------Data Analytics---------------------------------------------------
+
+
+#Here we can see 1944 had the greatest amount of bombings and 1939 had none because very little
+#happened during the first 8 months of the war, a period which is often refered to as the "phoney war"
+
+year <- format(as.Date(operations$mission.date, format="%d/%m/%Y"),"%Y")
+
+colours <- c("blue", "orange")
+year_counts <- table(year)
+barplot(year_counts, main="Years of The War", 
+        xlab="Individual Years", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+#Most popular bombers
+
+plane_counts <- table(operations$aircraft.series)
+barplot(plane_counts, main="Most Popular Bomber of WWII", 
+        xlab="Different Bombers", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+
+#Map the co-ordinates onto a map
+#Code borrowed from http://www.milanor.net/blog/maps-in-r-plotting-data-points-on-a-map/
+library(ggplot2)
+library(ggmap)
+
+# creating a sample data.frame with your lat/lon points
+lon <- c(operations$target.longitude)
+lat <- c(operations$target.latitude)
+df <- as.data.frame(cbind(lon,lat))
+
+# getting the map
+mapgilbert <- get_map(location = c(lon = mean(df$lon), lat = mean(df$lat)), zoom = 4,
+                      maptype = "satellite", scale = 2)
+
+# plotting the map with some points on it
+ggmap(mapgilbert) +
+  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+
+
+
+
+
 
 
 
