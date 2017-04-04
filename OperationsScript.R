@@ -519,9 +519,15 @@ barplot(plane_counts, main="Most Popular Bomber of WWII",
 
 
 #Map the co-ordinates onto a map
+
 #Code borrowed from http://www.milanor.net/blog/maps-in-r-plotting-data-points-on-a-map/
 library(ggplot2)
 library(ggmap)
+target_lat <- operations$target.latitude!=0
+operations["temp_lat"] <- NA
+operations$temp_lat <- operations$target.latitude!=0
+
+#target_lat
 
 # creating a sample data.frame with your lat/lon points
 lon <- c(operations$target.longitude)
@@ -536,6 +542,7 @@ mapgilbert <- get_map(location = c(lon = mean(df$lon), lat = mean(df$lat)), zoom
 ggmap(mapgilbert) +
   geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
+
 
 
 
