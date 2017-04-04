@@ -10,6 +10,7 @@ library(data.table)
 
 #Replace blank spaces with NA
 operations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/operations.csv", na.strings=c("", "NA"))
+operations <- read.csv("C:/Users/Niall/Documents/Big Data/BigData/operations.csv", na.strings=c("", "NA"))
 #------------------------------------Data Cleaning---------------------------------------------------
 #I used the following from https://www.kaggle.com/cswingle/d/usaf/world-war-ii/preliminary-look-at-the-data just so 
 #I could understand the data and what was missing
@@ -401,16 +402,7 @@ View(all_altitude)
 #This time, instead of choosing to replace the na's with unknown I decided to take the mean of the column and add 
 #add that where there a na's in the data
 
-#for (i in which(sapply(operations, is.numeric))) {
-#  for (j in which(is.na(operations[, i]))) {
-#    operations[j, i] <- mean(operations[operations[, "altitude..hundreds.of.feet."] == operations[j, "altitude..hundreds.of.feet."], i],  na.rm = TRUE)
-#  }
-#}
-#setDT(operations)
-
-#operations[, altitude..hundreds.of.feet. := impute.mean(altitude..hundreds.of.feet.), by = altitude..hundreds.of.feet.][,
-#altitude..hundreds.of.feet. := impute.mean(altitude..hundreds.of.feet.), by = altitude..hundreds.of.feet.]
-# come back to this
+operations$altitude..hundreds.of.feet.[is.na(operations$altitude..hundreds.of.feet.)] <- round(mean(operations$altitude..hundreds.of.feet., na.rm = TRUE))
 
 #--------Looking at the airborne aircraft column
 all_aircraft_airborne <- operations %>% 
@@ -447,8 +439,55 @@ operations$attacking.aircraft <- NULL
 
 operations["bomb.type"] <- NA
 
+operations$bomb.type[!is.na(operations$high.explosives)] <- "HIGH EXPLOSIVES"
+operations$bomb.type[!is.na(operations$incendiary.devices)] <- "INCENDIARY"
+operations$bomb.type[!is.na(operations$fragmentation.devices)] <- "FRAGMENTATION"
+operations$bomb.type[operations$high.explosives.type=="ATOMIC BOMB (LITTLE BOY)"] <- "ATOMIC BOMB"
+operations$bomb.type[operations$high.explosives.type=="ATOMIC BOMB (FAT MAN)"] <- "ATOMIC BOMB"
+operations$bomb.type[operations$target.type=="PROPAGANDA"] <- "LEAFLET DROPPING"
+operations$bomb.type[operations$mission.type=="LEAFLET DROPPING"] <- "LEAFLET DROPPING"
+operations$bomb.type[is.na(operations$bomb.type)] <- "UNKNOWN"
+
+all_bomb_types <- operations %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+
+#Now I can remove all the exlosives column
+operations$high.explosives <- NULL
+operations$high.explosives.type <- NULL
+operations$high.explosives.weight..pounds. <- NULL
+operations$high.explosives.weight..tons. <- NULL
+operations$incendiary.devices <- NULL
+operations$incendiary.devices.type <- NULL
+operations$incendiary.devices.weight..pounds. <- NULL
+operations$incendiary.devices.weight..tons. <- NULL
+operations$fragmentation.devices <- NULL
+operations$fragmentation.devices.weight..pounds. <- NULL
+operations$fragmentation.devices.weight..tons. <- NULL
+operations$fragmentation.devices.type <- NULL
+operations$total.weight..pounds. <- NULL
+operations$total.weight..tons. <- NULL
 
 
+#--------Looking at the final columns
+colMeans(is.na(operations))
+
+#Both time over target and bomb damage assesment have over 99% of their data missing so it's best to
+#just remove them. For sourceID I will just add UNKOWN
+operations$time.over.target <- NULL
+operations$bomb.damage.assessment <- NULL
+
+all_source_id <- operations %>% 
+  select(source.id) %>% 
+  group_by(source.id) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_source_id)
+
+operations$source.id[is.na(operations$source.id)] <- "UNKNOWN"
 
 
 
