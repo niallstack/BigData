@@ -77,11 +77,11 @@ View(all_target_long_lat)
 
 #Replace Target Missing Longitute With 0
 operations$target.longitude <- as.character(operations$target.longitude)
-operations$target.longitude[is.na(operations$target.longitude)] <- 0
+operations$target.longitude[is.na(operations$target.longitude)] <- "UNKNOWN"
 
 #Replace Target Missing Latitude With 0
 operations$target.latitude <- as.character(operations$target.latitude)
-operations$target.latitude[is.na(operations$target.latitude)] <- 0
+operations$target.latitude[is.na(operations$target.latitude)] <- "UNKNOWN"
 
 #--Missing mission date and weight of high explosives
 operations %>%
@@ -328,11 +328,11 @@ View(missing_takeoff_long_lat)
 
 #Replace Target Missing Longitute With 0
 operations$takeoff.longitude <- as.character(operations$takeoff.longitude)
-operations$takeoff.longitude[is.na(operations$takeoff.longitude)] <- 0
+operations$takeoff.longitude[is.na(operations$takeoff.longitude)] <- "UNKNOWN"
 
 #Replace Target Missing Latitude With 0
 operations$takeoff.latitude <- as.character(operations$takeoff.latitude)
-operations$takeoff.latitude[is.na(operations$takeoff.latitude)] <- 0
+operations$takeoff.latitude[is.na(operations$takeoff.latitude)] <- "UNKNOWN"
 
 #--------Looking at the target type column
 #Look at all target type
@@ -520,13 +520,12 @@ barplot(plane_counts, main="Most Popular Bomber of WWII",
 
 #Map the co-ordinates onto a map
 
-#Code borrowed from http://www.milanor.net/blog/maps-in-r-plotting-data-points-on-a-map/
+#Code borrowed from https://stackoverflow.com/questions/23130604/plot-coordinates-on-map
 library(ggplot2)
 library(ggmap)
-target_lat <- operations$target.latitude!=0
-operations["temp_lat"] <- NA
-operations$temp_lat <- operations$target.latitude!=0
 
+#Create a subset of data where the target longitude and latitudes are known
+known_long_lat <- subset(operations, operations$target.latitude != "UNKNOWN")
 #target_lat
 
 # creating a sample data.frame with your lat/lon points
