@@ -75,13 +75,15 @@ all_target_long_lat <- operations %>%
   arrange(desc(n))
 View(all_target_long_lat)
 
+#-Originally I made the targetr longitudes and latitudes UNKOWN but this caused problems
+#-when I wanted to map them, so I left them as NA
 #Replace Target Missing Longitute With 0
-operations$target.longitude <- as.character(operations$target.longitude)
-operations$target.longitude[is.na(operations$target.longitude)] <- "UNKNOWN"
+#operations$target.longitude <- as.character(operations$target.longitude)
+#operations$target.longitude[is.na(operations$target.longitude)] <- "UNKNOWN"
 
 #Replace Target Missing Latitude With 0
-operations$target.latitude <- as.character(operations$target.latitude)
-operations$target.latitude[is.na(operations$target.latitude)] <- "UNKNOWN"
+#operations$target.latitude <- as.character(operations$target.latitude)
+#operations$target.latitude[is.na(operations$target.latitude)] <- "UNKNOWN"
 
 #--Missing mission date and weight of high explosives
 operations %>%
@@ -517,24 +519,39 @@ plane_counts <- table(operations$aircraft.series)
 barplot(plane_counts, main="Most Popular Bomber of WWII", 
         xlab="Different Bombers", ylab="Amount of Bombing Runs", border="black", col=colours)
 
+#Most common type of target
+target_type_counts <- table(operations$target.type)
+barplot(target_type_counts, main="Most Common Target Type", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 #Map the co-ordinates onto a map
+
+# creating a sample data.frame with your lat/lon points
+lon <- c(operations$takeoff.longitude)
+lat <- c(operations$takeoff.latitude)
+df <- as.data.frame(cbind(lon,lat))
+
+# plotting the map with some points on it
+ggmap(mapgilbert) +
+  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
 #Code borrowed from https://stackoverflow.com/questions/23130604/plot-coordinates-on-map
 library(ggplot2)
 library(ggmap)
 
 #Create a subset of data where the target longitude and latitudes are known
-known_long_lat <- subset(operations, operations$target.latitude != "UNKNOWN")
-#target_lat
-
-# creating a sample data.frame with your lat/lon points
-lon <- c(operations$target.longitude)
-lat <- c(operations$target.latitude)
+smalloperations <- read.csv("C:/Users/Niall/Documents/Big Data/BigData/smalldataset.csv", na.strings=c("", "NA"))
+newdata <- na.omit(operations)
+lon <- c(smalloperations$takeoff.longitude)
+lat <- c(smalloperations$takeoff.latitude)
 df <- as.data.frame(cbind(lon,lat))
 
+
+
+
 # getting the map
-mapgilbert <- get_map(location = c(lon = mean(df$lon), lat = mean(df$lat)), zoom = 4,
+mapgilbert <- get_map(location = c(dflon = mean(df$lon), lat = mean(df$lat)), zoom = 4,
                       maptype = "satellite", scale = 2)
 
 # plotting the map with some points on it
@@ -542,13 +559,25 @@ ggmap(mapgilbert) +
   geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
+library(map)
 
+map('worldHires', col=1:10)
+text(known_long$target.longitude,known_lat$target.latitude, col="red", font=2)
 
+library(maps); 
+library(mapdata)
 
+#lon <- c(known_long$takeoff.longitude)
+#lat <- c(known_lat$takeoff.latitude)
+df <- as.data.frame(cbind(lon,lat))
+dat <- data.frame(lon=runif(lon),
+                  lat=runif(lat))
+#plot(dat,pch=16,col="red")
+#map("worldHires",add=TRUE,fill=TRUE)
 
-
-
-
+library(ggplot2)
+#ggplot(dat,aes(x=lon,y=lat))+geom_point(col="red",pch=16)
+ggplot(dat,aes(lon,lat))+borders() + geom_point(col="red",pch=16)
 
 
 
