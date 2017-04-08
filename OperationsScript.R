@@ -541,43 +541,42 @@ library(ggplot2)
 library(ggmap)
 
 #Create a subset of data where the target longitude and latitudes are known
-smalloperations <- read.csv("C:/Users/Niall/Documents/Big Data/BigData/smalldataset.csv", na.strings=c("", "NA"))
+write.csv(operations, file = "S:/Niall/Documents/Big Data Project/BigData/CleanOperations.csv")
+smalloperations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/smalloperations.csv", na.strings=c("", "NA"))
+smalloperations <- read.csv("C:/Users/Niall/Documents/Big Data/BigData/smalloperations.csv", na.strings=c("", "NA"))
 newdata <- na.omit(operations)
-lon <- c(smalloperations$takeoff.longitude)
-lat <- c(smalloperations$takeoff.latitude)
+lon <- c(newdata$target.longitude)
+lat <- c(newdata$target.latitude)
 df <- as.data.frame(cbind(lon,lat))
 
-
-
-
-# getting the map
-mapgilbert <- get_map(location = c(dflon = mean(df$lon), lat = mean(df$lat)), zoom = 4,
-                      maptype = "satellite", scale = 2)
+# getting the map for european and meditaerranean theaters
+mapgilbert <- get_map(location = c(lon = 10.458676, lat = 50.296548), zoom = 4,
+                      maptype = "satellite", scale = 1)
 
 # plotting the map with some points on it
 ggmap(mapgilbert) +
-  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
+  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
-library(map)
+#library(map)
 
-map('worldHires', col=1:10)
-text(known_long$target.longitude,known_lat$target.latitude, col="red", font=2)
+#map('worldHires', col=1:10)
+#text(known_long$target.longitude,known_lat$target.latitude, col="red", font=2)
 
-library(maps); 
-library(mapdata)
+#library(maps); 
+#library(mapdata)
 
 #lon <- c(known_long$takeoff.longitude)
 #lat <- c(known_lat$takeoff.latitude)
-df <- as.data.frame(cbind(lon,lat))
-dat <- data.frame(lon=runif(lon),
-                  lat=runif(lat))
+#df <- as.data.frame(cbind(lon,lat))
+#dat <- data.frame(lon=runif(lon),
+                  #lat=runif(lat))
 #plot(dat,pch=16,col="red")
 #map("worldHires",add=TRUE,fill=TRUE)
 
-library(ggplot2)
+#library(ggplot2)
 #ggplot(dat,aes(x=lon,y=lat))+geom_point(col="red",pch=16)
-ggplot(dat,aes(lon,lat))+borders() + geom_point(col="red",pch=16)
+#ggplot(dat,aes(lon,lat))+borders() + geom_point(col="red",pch=16)
 
 
 
