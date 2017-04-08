@@ -5,7 +5,8 @@ library(lubridate)
 library(tidyverse)
 library(knitr)
 library(data.table)
-
+library(ggplot2)
+library(ggmap)
 
 #Remove all variable and data command - rm(list=ls())
 
@@ -524,21 +525,12 @@ target_type_counts <- table(operations$target.type)
 barplot(target_type_counts, main="Most Common Target Type", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
-#Map the co-ordinates onto a map
-
-# creating a sample data.frame with your lat/lon points
-lon <- c(operations$takeoff.longitude)
-lat <- c(operations$takeoff.latitude)
-df <- as.data.frame(cbind(lon,lat))
-
-# plotting the map with some points on it
-ggmap(mapgilbert) +
-  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 5, shape = 21) +
-  guides(fill=FALSE, alpha=FALSE, size=FALSE)
+#--Map the co-ordinates onto a map
 
 #Code borrowed from https://stackoverflow.com/questions/23130604/plot-coordinates-on-map
-library(ggplot2)
-library(ggmap)
+#While trying to do this I asked two seperate questions myself on stackoverflow:
+#-https://stackoverflow.com/questions/43233044/error-when-trying-to-plot-coordinates-in-r
+#-https://stackoverflow.com/questions/43296028/no-non-missing-arguments-to-min-and-max
 
 #Create a subset of data where the target longitude and latitudes are known
 write.csv(operations, file = "S:/Niall/Documents/Big Data Project/BigData/CleanOperations.csv")
@@ -549,34 +541,27 @@ lon <- c(newdata$target.longitude)
 lat <- c(newdata$target.latitude)
 df <- as.data.frame(cbind(lon,lat))
 
-# getting the map for european and meditaerranean theaters
+
+#-European and Mediterranean Theaters
+
+#getting the map
 mapgilbert <- get_map(location = c(lon = 10.458676, lat = 50.296548), zoom = 4,
                       maptype = "satellite", scale = 1)
 
-# plotting the map with some points on it
+#plotting the map with some points on it
 ggmap(mapgilbert) +
   geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
-#library(map)
+#-The Pacific Theater
+#getting the map
+mapgilbert <- get_map(location = c(lon = 152.954403, lat = 28.873755), zoom = 3,
+                      maptype = "satellite", scale = 1)
 
-#map('worldHires', col=1:10)
-#text(known_long$target.longitude,known_lat$target.latitude, col="red", font=2)
-
-#library(maps); 
-#library(mapdata)
-
-#lon <- c(known_long$takeoff.longitude)
-#lat <- c(known_lat$takeoff.latitude)
-#df <- as.data.frame(cbind(lon,lat))
-#dat <- data.frame(lon=runif(lon),
-                  #lat=runif(lat))
-#plot(dat,pch=16,col="red")
-#map("worldHires",add=TRUE,fill=TRUE)
-
-#library(ggplot2)
-#ggplot(dat,aes(x=lon,y=lat))+geom_point(col="red",pch=16)
-#ggplot(dat,aes(lon,lat))+borders() + geom_point(col="red",pch=16)
+#plotting the map with some points on it
+ggmap(mapgilbert) +
+  geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 1, shape = 21) +
+  guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
 
 
