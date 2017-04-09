@@ -1,3 +1,4 @@
+library(plyr)
 library(stringr)
 library(dplyr)
 library(date)
@@ -351,6 +352,7 @@ operations$target.type <- as.character(operations$target.type)
 operations$target.type[is.na(operations$target.type)] <- "UNKNOWN"
 #Combine the previous missing entries which were labelled "Unidentified
 operations$target.type[operations$target.type=="UNIDENTIFIED TARGET"] <- "UNKNOWN"
+operations$target.type[operations$target.type=="UNIDENTIFIED TARGETs"] <- "UNKNOWN"
 
 
 #--------Looking at the target industry column
@@ -503,7 +505,6 @@ operations$source.id[is.na(operations$source.id)] <- "UNKNOWN"
 
 #------------------------------------Data Analytics---------------------------------------------------
 
-
 #Here we can see 1944 had the greatest amount of bombings and 1939 had none because very little
 #happened during the first 8 months of the war, a period which is often refered to as the "phoney war"
 
@@ -520,10 +521,18 @@ plane_counts <- table(operations$aircraft.series)
 barplot(plane_counts, main="Most Popular Bomber of WWII", 
         xlab="Different Bombers", ylab="Amount of Bombing Runs", border="black", col=colours)
 
-#Most common type of target
-target_type_counts <- table(operations$target.type)
-barplot(target_type_counts, main="Most Common Target Type", 
-        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+#previous was unreadable due to the amount, 
+#so I used code from - https://stackoverflow.com/questions/27422229/how-to-subset-long-dataframe-based-on-top-n-frequent-occurrences-of-variable
+#to sort by the top 10 most common
+
+tab <- table(operations$aircraft.series)
+tab_s <- sort(tab)
+top10 <- tail(names(tab_s), 10)
+d_s <- subset(operations, aircraft.series %in% top10)
+d_s$aircraft.series <- factor(d_s$aircraft.series, levels = rev(top10))
+top_plane_counts <- table(d_s$aircraft.series)
+barplot(top_plane_counts, main="Most Popular Bomber of WWII", 
+        xlab="Different Bombers", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 #--Map the co-ordinates onto a map
 
@@ -562,6 +571,167 @@ mapgilbert <- get_map(location = c(lon = 152.954403, lat = 28.873755), zoom = 3,
 ggmap(mapgilbert) +
   geom_point(data = df, aes(x = lon, y = lat, fill = "red", alpha = 0.8), size = 1, shape = 21) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
+
+#---Looking at the targets
+
+tab <- table(operations$target.type)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(operations, target.type %in% top5)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
+top_plane_counts <- table(d_s$target.type)
+barplot(top_plane_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+#Unknown is by far the largest so I'll make a data frame with all those removed
+
+no_unknown_targets <- operations
+no_unknown_targets <- no_unknown_targets[- grep("UNKNOWN", no_unknown_targets$target.type),]
+
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(no_unknown_targets, target.type %in% top5)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
+top_plane_counts <- table(d_s$target.type)
+barplot(top_plane_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+#I'll combine City Area and Town into Civilian Areas
+
+no_unknown_targets$target.type[no_unknown_targets$target.type=="CITY AREA"] <- "CIVILIAN AREA"
+no_unknown_targets$target.type[no_unknown_targets$target.type=="TOWN"] <- "CIVILIAN AREA"
+
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(no_unknown_targets, target.type %in% top5)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
+top_plane_counts <- table(d_s$target.type)
+barplot(top_plane_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+
+#Again we will look at some other target types that would most likely incur heavy civilian loss
+
+all_target_type <- operations %>% 
+  select(target.type) %>% 
+  group_by(target.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_type)
+
+#Combine some more types that would most likely incur heavy civilian loss
+no_unknown_targets$target.type[no_unknown_targets$target.type=="URBAN AREA"] <- "CIVILIAN AREA"
+no_unknown_targets$target.type[no_unknown_targets$target.type=="TOWN AREA"] <- "CIVILIAN AREA"
+no_unknown_targets$target.type[no_unknown_targets$target.type=="VILLAGE"] <- "CIVILIAN AREA"
+
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(no_unknown_targets, target.type %in% top5)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
+top_plane_counts <- table(d_s$target.type)
+barplot(top_plane_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+#Take out leaflet dropping from targets
+
+all_bomb_types <- operations %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+
+
+no_unknown_targets <- no_unknown_targets[- grep("LEAFLET DROPPING", no_unknown_targets$bomb.type),]
+
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(no_unknown_targets, target.type %in% top5)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
+top_plane_counts <- table(d_s$target.type)
+barplot(top_plane_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+
+#Civilian areas are clearly the mostly targeted area
+
+areas <- c("Civilian Area", "Airdrome", "Marshalling Yard", "Bridge", "Oil Refinery")
+pct <- round(top_plane_counts/sum(top_plane_counts)*100)
+areas <- paste(areas, pct)
+areas <- paste(areas, "%", sep="")
+pie(top_plane_counts, labels=areas, main="Most Targeted Bombing Areas")
+
+#--Clustering on Altitude and Target priority
+
+priority_altitude <- operations
+#colnames(priority_altitude) <- c("target.priority", "altitude..hundreds.of.feet.")
+
+#remove unknowns
+
+priority_altitude <- priority_altitude[- grep("9", operations$target.priority),]
+
+#Plot the data
+ggplot(priority_altitude, aes(target.priority, altitude..hundreds.of.feet., color=target.priority)) + geom_point()
+
+#clustering
+#I'll remove columns that I don't need for clustering
+priority_altitude$mission.id <- NULL
+priority_altitude$mission.date <- NULL
+priority_altitude$theater.of.operations <- NULL
+priority_altitude$country <- NULL
+priority_altitude$air.force <- NULL
+priority_altitude$aircraft.series <- NULL
+priority_altitude$mission.type <- NULL
+priority_altitude$takeoff.base <- NULL
+priority_altitude$takeoff.location <- NULL
+priority_altitude$takeoff.latitude <- NULL
+priority_altitude$takeoff.longitude <- NULL
+priority_altitude$target.id <- NULL
+priority_altitude$target.country <- NULL
+priority_altitude$target.city.or.area <- NULL
+priority_altitude$target.type <- NULL
+priority_altitude$target.industry <- NULL
+priority_altitude$target.latitude <- NULL
+priority_altitude$target.longitude <- NULL
+priority_altitude$source.id <- NULL
+priority_altitude$bomb.type <- NULL
+
+
+write.csv(priority_altitude, file = "S:/Niall/Documents/Big Data Project/BigData/priority.csv")
+smallpriority <- read.csv("S:/Niall/Documents/Big Data Project/BigData/smallpriority.csv", na.strings=c("", "NA"))
+
+ggplot(smallpriority, aes(target.priority, altitude..hundreds.of.feet., color=target.priority)) + geom_point()
+#Assign x and y
+x = smallpriority$target.priority
+y = smallpriority$altitude..hundreds.of.feet.
+
+kc <- kmeans(x,4)
+
+kc
+
+table(y,kc$cluster)
+pdf("S:/Niall/Documents/Big Data Project/BigData/my_plot.pdf")
+
+plot(x[c(smallpriority$target.priority, smallpriority$altitude..hundreds.of.feet.)], col=kc$cluster)
+points(kc$centers[,c(smallpriority$target.priority, smallpriority$altitude..hundreds.of.feet.)], col=1:3, pch=23, cex=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
