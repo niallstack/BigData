@@ -8,9 +8,9 @@ library(knitr)
 library(data.table)
 library(ggplot2)
 library(ggmap)
+library(arules)
 
 #Remove all variable and data command - rm(list=ls())
-
 #Replace blank spaces with NA
 operations <- read.csv("S:/Niall/Documents/Big Data Project/BigData/operations.csv", na.strings=c("", "NA"))
 operations <- read.csv("C:/Users/Niall/Documents/Big Data/BigData/operations.csv", na.strings=c("", "NA"))
@@ -579,8 +579,8 @@ tab_s <- sort(tab)
 top5 <- tail(names(tab_s), 5)
 d_s <- subset(operations, target.type %in% top5)
 d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
-top_plane_counts <- table(d_s$target.type)
-barplot(top_plane_counts, main="Most Common Target Types", 
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 #Unknown is by far the largest so I'll make a data frame with all those removed
@@ -588,13 +588,14 @@ barplot(top_plane_counts, main="Most Common Target Types",
 no_unknown_targets <- operations
 no_unknown_targets <- no_unknown_targets[- grep("UNKNOWN", no_unknown_targets$target.type),]
 
+
 tab <- table(no_unknown_targets$target.type)
 tab_s <- sort(tab)
 top5 <- tail(names(tab_s), 5)
 d_s <- subset(no_unknown_targets, target.type %in% top5)
 d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
-top_plane_counts <- table(d_s$target.type)
-barplot(top_plane_counts, main="Most Common Target Types", 
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 #I'll combine City Area and Town into Civilian Areas
@@ -607,8 +608,8 @@ tab_s <- sort(tab)
 top5 <- tail(names(tab_s), 5)
 d_s <- subset(no_unknown_targets, target.type %in% top5)
 d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
-top_plane_counts <- table(d_s$target.type)
-barplot(top_plane_counts, main="Most Common Target Types", 
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 
@@ -631,8 +632,8 @@ tab_s <- sort(tab)
 top5 <- tail(names(tab_s), 5)
 d_s <- subset(no_unknown_targets, target.type %in% top5)
 d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
-top_plane_counts <- table(d_s$target.type)
-barplot(top_plane_counts, main="Most Common Target Types", 
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
 #Take out leaflet dropping from targets
@@ -652,83 +653,173 @@ tab_s <- sort(tab)
 top5 <- tail(names(tab_s), 5)
 d_s <- subset(no_unknown_targets, target.type %in% top5)
 d_s$target.type <- factor(d_s$target.type, levels = rev(top5))
-top_plane_counts <- table(d_s$target.type)
-barplot(top_plane_counts, main="Most Common Target Types", 
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
         xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
-
-#Civilian areas are clearly the mostly targeted area
+all_bomb_types <- no_unknown_targets %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+#Civilian areas are clearly the mostly targeted area unless all the military targets are added up
 
 areas <- c("Civilian Area", "Airdrome", "Marshalling Yard", "Bridge", "Oil Refinery")
 pct <- round(top_plane_counts/sum(top_plane_counts)*100)
 areas <- paste(areas, pct)
 areas <- paste(areas, "%", sep="")
-pie(top_plane_counts, labels=areas, main="Most Targeted Bombing Areas")
+pie(top_target_counts, labels=areas, main="Most Targeted Bombing Areas")
 
-#--Clustering on Altitude and Target priority
+#Typically everything else is military target, so add those together
 
-priority_altitude <- operations
-#colnames(priority_altitude) <- c("target.priority", "altitude..hundreds.of.feet.")
+no_unknown_targets$target.type[no_unknown_targets$target.type!="CIVILIAN AREA"] <- "MILITARY TARGET"
 
-#remove unknowns
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top2 <- tail(names(tab_s), 2)
+d_s <- subset(no_unknown_targets, target.type %in% top2)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top2))
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
-priority_altitude <- priority_altitude[- grep("9", operations$target.priority),]
+areas <- c("Military Target", "Civilian Area")
+pct <- round(top_target_counts/sum(top_target_counts)*100)
+areas <- paste(areas, pct)
+areas <- paste(areas, "%", sep="")
+pie(top_target_counts, labels=areas, main="Most Targeted Bombing Areas")
 
-#Plot the data
-ggplot(priority_altitude, aes(target.priority, altitude..hundreds.of.feet., color=target.priority)) + geom_point()
+all_bomb_types <- no_unknown_targets %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+#-- association rules--
 
-#clustering
-#I'll remove columns that I don't need for clustering
-priority_altitude$mission.id <- NULL
-priority_altitude$mission.date <- NULL
-priority_altitude$theater.of.operations <- NULL
-priority_altitude$country <- NULL
-priority_altitude$air.force <- NULL
-priority_altitude$aircraft.series <- NULL
-priority_altitude$mission.type <- NULL
-priority_altitude$takeoff.base <- NULL
-priority_altitude$takeoff.location <- NULL
-priority_altitude$takeoff.latitude <- NULL
-priority_altitude$takeoff.longitude <- NULL
-priority_altitude$target.id <- NULL
-priority_altitude$target.country <- NULL
-priority_altitude$target.city.or.area <- NULL
-priority_altitude$target.type <- NULL
-priority_altitude$target.industry <- NULL
-priority_altitude$target.latitude <- NULL
-priority_altitude$target.longitude <- NULL
-priority_altitude$source.id <- NULL
-priority_altitude$bomb.type <- NULL
+tab <- table(no_unknown_targets$target.type)
+tab_s <- sort(tab)
+top2 <- tail(names(tab_s), 2)
+d_s <- subset(no_unknown_targets, target.type %in% top2)
+d_s$target.type <- factor(d_s$target.type, levels = rev(top2))
+top_target_counts <- table(d_s$target.type)
+barplot(top_target_counts, main="Most Common Target Types", 
+        xlab="Different Targets", ylab="Amount of Bombing Runs", border="black", col=colours)
 
+areas <- c("Military Target", "Civilian Area")
+pct <- round(top_target_counts/sum(top_target_counts)*100)
+areas <- paste(areas, pct)
+areas <- paste(areas, "%", sep="")
+pie(top_target_counts, labels=areas, main="Most Targeted Bombing Areas")
 
-write.csv(priority_altitude, file = "S:/Niall/Documents/Big Data Project/BigData/priority.csv")
-smallpriority <- read.csv("S:/Niall/Documents/Big Data Project/BigData/smallpriority.csv", na.strings=c("", "NA"))
-
-ggplot(smallpriority, aes(target.priority, altitude..hundreds.of.feet., color=target.priority)) + geom_point()
-#Assign x and y
-x = smallpriority$target.priority
-y = smallpriority$altitude..hundreds.of.feet.
-
-kc <- kmeans(x,4)
-
-kc
-
-table(y,kc$cluster)
-pdf("S:/Niall/Documents/Big Data Project/BigData/my_plot.pdf")
-
-plot(x[c(smallpriority$target.priority, smallpriority$altitude..hundreds.of.feet.)], col=kc$cluster)
-points(kc$centers[,c(smallpriority$target.priority, smallpriority$altitude..hundreds.of.feet.)], col=1:3, pch=23, cex=3)
-
-
-
-
-
+#remove all unecessary columns
+no_unknown_targets$mission.id <- NULL
+no_unknown_targets$mission.date <- NULL
+no_unknown_targets$theater.of.operations <- NULL
+no_unknown_targets$country <- NULL
+no_unknown_targets$air.force <- NULL
+no_unknown_targets$aircraft.series <- NULL
+no_unknown_targets$mission.type <- NULL
+no_unknown_targets$takeoff.base <- NULL
+no_unknown_targets$takeoff.location <- NULL
+no_unknown_targets$takeoff.latitude <- NULL
+no_unknown_targets$takeoff.longitude <- NULL
+no_unknown_targets$target.id <- NULL
+no_unknown_targets$target.country <- NULL
+no_unknown_targets$target.city.or.area <- NULL
+no_unknown_targets$target.industry <- NULL
+no_unknown_targets$target.latitude <- NULL
+no_unknown_targets$target.longitude <- NULL
+no_unknown_targets$source.id <- NULL
+no_unknown_targets$altitude..hundreds.of.feet. <- NULL
 
 
 
+#Look at whats in target priority
 
+all_target_priority <- no_unknown_targets %>% 
+  select(target.priority) %>% 
+  group_by(target.priority) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_priority)
 
+#Remove 9 as they are unkown
+no_unknown_targets <- no_unknown_targets[- grep(9, no_unknown_targets$target.priority),]
 
+all_target_priority <- no_unknown_targets %>% 
+  select(target.priority) %>% 
+  group_by(target.priority) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_priority)
+
+#look at bomb types
+all_bomb_types <- no_unknown_targets %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+
+#Remove unknown
+
+no_unknown_targets <- no_unknown_targets[- grep("UNKNOWN", no_unknown_targets$bomb.type),]
+
+all_bomb_types <- no_unknown_targets %>% 
+  select(bomb.type) %>% 
+  group_by(bomb.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_bomb_types)
+
+#change to factors=s
+
+no_unknown_targets$target.type <- factor(no_unknown_targets$target.type, labels=c("Military Targets", "Civilian Areas"))
+no_unknown_targets$target.priority <- factor(no_unknown_targets$target.priority, labels=c("Primary Target", "Secondary Target", "Target of Opportunity", "Target of Last Resort"))
+no_unknown_targets$bomb.type <- factor(no_unknown_targets$bomb.type, labels=c("High Explosives", "Fragmentation", "Incendiary", "Atomic Bomb"))
+
+# find association rules with default settings
+rules.all <- apriori(no_unknown_targets)
+
+rules.all
+
+inspect(rules.all)
+
+# rules with rhs containing "Civilian Areas" only
+
+rules <- apriori(no_unknown_targets, control = list(verbose=F),parameter = list(minlen=2, supp=0.005, conf=0.8),
+                 appearance = list(rhs=c("target.type=Military Targets", "target.type=Civilian Areas"),
+                                   default="lhs"))
+quality(rules) <- round(quality(rules), digits=3)
+
+rules.sorted <- sort(rules, by="lift")
+
+inspect(rules.sorted)
+
+rules <- apriori(no_unknown_targets, parameter = list (minlen=3, sup=0.002, conf=0.2), 
+                 appearance = list(rhs=c("target.type=Civilian Areas"),lhs=c("target.priority=Primary Target", "target.priority=Secondary Target", "target.priority=Target of Opportunity",
+                                                               "target.priority=Target of Last Resort","bomb.type=High Explosives","bomb.type=Fragmentation", "bomb.type=Incendiary","bomb.type=Atomic Bomb"),default="none"),
+                 control = list(verbose=F))
+rules.sorted <- sort(rules, by="confidence")
+inspect(rules.sorted)
+
+#-Looking at primary targets and areas
+rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf=0.2), 
+                 appearance = list(rhs=c("target.priority=Primary Target"),lhs=c("target.type=Military Targets", "target.type=Civilian Areas"),default="none"),
+                 control = list(verbose=F))
+rules.sorted <- sort(rules, by="confidence")
+inspect(rules.sorted)
+
+#91% of bombing runs on Civilian Areas were marked as top priority, versus 77% for military
+
+#-Looking at high explosives
+rules <- apriori(no_unknown_targets, parameter = list (minlen=1, sup=0.002, conf=0.2), 
+                 appearance = list(rhs=c("bomb.type=Incendiary"),lhs=c("target.type=Military Targets", "target.type=Civilian Areas"),default="none"),
+                 control = list(verbose=F))
+rules.sorted <- sort(rules, by="confidence")
+inspect(rules.sorted)
 
 
 
