@@ -763,6 +763,13 @@ all_bomb_types <- no_unknown_targets %>%
   arrange(desc(n))
 View(all_bomb_types)
 
+#target type
+all_target_type <- no_unknown_targets %>% 
+  select(target.type) %>% 
+  group_by(target.type) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+View(all_target_type)
 #Remove unknown
 
 no_unknown_targets <- no_unknown_targets[- grep("UNKNOWN", no_unknown_targets$bomb.type),]
@@ -776,9 +783,9 @@ View(all_bomb_types)
 
 #change to factors=s
 
-no_unknown_targets$target.type <- factor(no_unknown_targets$target.type, labels=c("Military Targets", "Civilian Areas"))
+no_unknown_targets$target.type <- factor(no_unknown_targets$target.type, labels=c("Civilian Areas", "Military Targets"))
 no_unknown_targets$target.priority <- factor(no_unknown_targets$target.priority, labels=c("Primary Target", "Secondary Target", "Target of Opportunity", "Target of Last Resort"))
-no_unknown_targets$bomb.type <- factor(no_unknown_targets$bomb.type, labels=c("High Explosives", "Fragmentation", "Incendiary", "Atomic Bomb"))
+no_unknown_targets$bomb.type <- factor(no_unknown_targets$bomb.type, labels=c("Atomic Bomb", "Fragmentation","High Explosives", "Incendiary"))
 
 # find association rules with default settings
 rules.all <- apriori(no_unknown_targets)
@@ -812,17 +819,22 @@ rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf
 rules.sorted <- sort(rules, by="confidence")
 inspect(rules.sorted)
 
-#91% of bombing runs on Civilian Areas were marked as top priority, versus 77% for military
+#91% of bombing runs on Military Areas were marked as top priority, versus 78% for Civilian
 
-#-Looking at high explosives
+#-Looking at incendiary
 rules <- apriori(no_unknown_targets, parameter = list (minlen=1, sup=0.002, conf=0.2), 
                  appearance = list(rhs=c("bomb.type=Incendiary"),lhs=c("target.type=Military Targets", "target.type=Civilian Areas"),default="none"),
                  control = list(verbose=F))
 rules.sorted <- sort(rules, by="confidence")
 inspect(rules.sorted)
 
+rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf=0.2), 
+                 appearance = list(rhs=c("target.type=Military Targets", "target.type=Civilian Areas"),lhs=c("bomb.type=Incendiary"),default="none"),
+                 control = list(verbose=F))
+rules.sorted <- sort(rules, by="confidence")
+inspect(rules.sorted)
 
-
+#Clearly military targets were attacked more and with higher priority. Problem being that military targets didnt mean they werent in middle of cities.
 
 
 
