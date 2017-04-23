@@ -798,7 +798,7 @@ inspect(rules.all)
 plot(rules.all); head(quality(rules.all)); plot(rules.all, measure=c("support","lift"), shading="confidence"); 
 plot(rules.all, shading="order", control=list(main ="Two-key plot"));
 
-# rules with rhs containing "Civilian Areas" only
+# rules with rhs containing "Civilian Areas" and "Military Areas"
 
 rules <- apriori(no_unknown_targets, control = list(verbose=F),parameter = list(minlen=2, supp=0.005, conf=0.8),
                  appearance = list(rhs=c("target.type=Military Targets", "target.type=Civilian Areas"),
@@ -845,10 +845,12 @@ rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf
 rules.sorted <- sort(rules, by="confidence")
 inspect(rules.sorted)
 
+#The larger the lift ratio, the more significant the association
+#Clearly military targets were attacked more and with higher priority. Problem being that military targets didnt mean they werent in middle of cities.
+
 plot(rules.sorted, shading="order", control=list(main ="Two-key plot"));
 plot(rules.sorted); head(quality(rules.sorted)); plot(rules.sorted, measure=c("support","lift"), shading="confidence");
 
-#Clearly military targets were attacked more and with higher priority. Problem being that military targets didnt mean they werent in middle of cities.
 
 
 
