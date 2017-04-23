@@ -9,6 +9,7 @@ library(data.table)
 library(ggplot2)
 library(ggmap)
 library(arules)
+library(arulesViz)
 
 #Remove all variable and data command - rm(list=ls())
 #Replace blank spaces with NA
@@ -794,6 +795,9 @@ rules.all
 
 inspect(rules.all)
 
+plot(rules.all); head(quality(rules.all)); plot(rules.all, measure=c("support","lift"), shading="confidence"); 
+plot(rules.all, shading="order", control=list(main ="Two-key plot"));
+
 # rules with rhs containing "Civilian Areas" only
 
 rules <- apriori(no_unknown_targets, control = list(verbose=F),parameter = list(minlen=2, supp=0.005, conf=0.8),
@@ -805,12 +809,17 @@ rules.sorted <- sort(rules, by="lift")
 
 inspect(rules.sorted)
 
+plot(rules.sorted, shading="order", control=list(main ="Two-key plot"));
+
 rules <- apriori(no_unknown_targets, parameter = list (minlen=3, sup=0.002, conf=0.2), 
                  appearance = list(rhs=c("target.type=Civilian Areas"),lhs=c("target.priority=Primary Target", "target.priority=Secondary Target", "target.priority=Target of Opportunity",
                                                                "target.priority=Target of Last Resort","bomb.type=High Explosives","bomb.type=Fragmentation", "bomb.type=Incendiary","bomb.type=Atomic Bomb"),default="none"),
                  control = list(verbose=F))
 rules.sorted <- sort(rules, by="confidence")
+
 inspect(rules.sorted)
+
+plot(rules.sorted, shading="order", control=list(main ="Two-key plot"));
 
 #-Looking at primary targets and areas
 rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf=0.2), 
@@ -818,6 +827,8 @@ rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf
                  control = list(verbose=F))
 rules.sorted <- sort(rules, by="confidence")
 inspect(rules.sorted)
+
+plot(rules.sorted, shading="order", control=list(main ="Two-key plot"));
 
 #91% of bombing runs on Military Areas were marked as top priority, versus 78% for Civilian
 
@@ -833,6 +844,9 @@ rules <- apriori(no_unknown_targets, parameter = list (minlen=2, sup=0.002, conf
                  control = list(verbose=F))
 rules.sorted <- sort(rules, by="confidence")
 inspect(rules.sorted)
+
+plot(rules.sorted, shading="order", control=list(main ="Two-key plot"));
+plot(rules.sorted); head(quality(rules.sorted)); plot(rules.sorted, measure=c("support","lift"), shading="confidence");
 
 #Clearly military targets were attacked more and with higher priority. Problem being that military targets didnt mean they werent in middle of cities.
 
