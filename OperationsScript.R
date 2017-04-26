@@ -535,6 +535,28 @@ top_plane_counts <- table(d_s$aircraft.series)
 barplot(top_plane_counts, main="Most Popular Bomber of WWII", 
         xlab="Different Bombers", ylab="Amount of Bombing Runs", border="black", col=colours)
 
+tab <- table(operations$target.country)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(operations, target.country %in% top5)
+d_s$target.country <- factor(d_s$target.country, levels = rev(top5))
+top_country_counts <- table(d_s$target.country)
+barplot(top_country_counts, main="Countries Most Bombed by the Allies", 
+        xlab="Different Countries", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+no_unknown_cities <- operations
+no_unknown_cities <- no_unknown_cities[- grep("UNKNOWN", no_unknown_cities$target.city.or.area),]
+
+tab <- table(no_unknown_cities$target.city.or.area)
+tab_s <- sort(tab)
+top5 <- tail(names(tab_s), 5)
+d_s <- subset(no_unknown_cities, target.city.or.area %in% top5)
+d_s$target.city.or.area <- factor(d_s$target.city.or.area, levels = rev(top5))
+top_cities_counts <- table(d_s$target.city.or.area)
+barplot(top_cities_counts, main="Cities Most Bombed by the Allies", 
+        xlab="Different Cities", ylab="Amount of Bombing Runs", border="black", col=colours)
+
+
 #--Map the co-ordinates onto a map
 
 #Code borrowed from https://stackoverflow.com/questions/23130604/plot-coordinates-on-map
